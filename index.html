@@ -1,0 +1,404 @@
+import React, { useMemo, useState } from "react";
+import { motion } from "framer-motion";
+import {
+  ArrowRight,
+  Mail,
+  Phone,
+  Download,
+  Building2,
+  Briefcase,
+  GraduationCap,
+  Users,
+  Sun,
+  Moon,
+  Linkedin,
+  Github,
+  MapPin,
+  Search,
+  Award,
+  Trophy,
+  Sparkles,
+  BarChart,
+  Gauge,
+  Star,
+  ChevronDown,
+  ChevronUp,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Separator } from "@/components/ui/separator";
+import { cn } from "@/lib/utils";
+
+// ---------------- DATA (kept concise for visuals) ----------------
+const profile = {
+  name: "Armaan Kadian",
+  title: "MBA Candidate · BITSoM '26 | Analytics & Strategy",
+  location: "Mumbai, India",
+  email: "armaan@example.com",
+  phone: "+91-XXXXXXXXXX",
+  blurb:
+    "I simplify complexity. I turn messy data and operations into crisp, scalable decisions.",
+  links: [
+    { label: "LinkedIn", href: "https://www.linkedin.com/", icon: <Linkedin className="h-4 w-4" /> },
+    { label: "GitHub", href: "https://github.com/", icon: <Github className="h-4 w-4" /> },
+  ],
+  resumeHref: "sandbox:/mnt/data/Armaan_Kadian_CV.pdf",
+};
+
+// KPIs for visual scanning
+const kpis = [
+  { label: "Projects Led", value: "25+", icon: <Briefcase className="h-4 w-4" /> },
+  { label: "Cost Saved", value: "₹6L", icon: <Gauge className="h-4 w-4" /> },
+  { label: "Stakeholders", value: "100+", icon: <Users className="h-4 w-4" /> },
+  { label: "Beneficiaries", value: "500+", icon: <Star className="h-4 w-4" /> },
+];
+
+// Experience — converted to TIMELINE items with 1‑line outcomes + expandable details
+const timeline = [
+  {
+    company: "Charis Software Pvt Ltd",
+    role: "Business Analytics Manager",
+    when: "Apr 2024 – Jun 2024 · Hyderabad",
+    highlight: "+20% client base • 50k+ rows analyzed for GTM focus",
+    bullets: [
+      "Acquired 10 clients via targeted outreach and value-led demos",
+      "Built pipeline dashboard; prioritized high‑margin verticals",
+    ],
+    tags: ["Analytics", "B2B", "Dashboards"],
+  },
+  {
+    company: "Outreach Foundation (NGO)",
+    role: "Project Executive",
+    when: "Apr 2023 – Mar 2024 · Hyderabad",
+    highlight: "10 projects · ₹20L managed • 500+ lives served",
+    bullets: [
+      "Coordinated 100+ stakeholders; ~10% time/cost gains",
+      "Solar project (₹5L) for 40+ tribal families → ~20% utility savings",
+    ],
+    tags: ["Program Mgmt", "Social Impact", "Energy"],
+  },
+  {
+    company: "Outreach Foundation (NGO)",
+    role: "Project Coordinator",
+    when: "May 2021 – Mar 2023 · Hyderabad",
+    highlight: "12 projects • ₹15L • 300+ beneficiaries",
+    bullets: [
+      "Hydroponics pilot: ₹50k farm → ₹3.5k/month savings; scaled to 20 homes",
+      "Negotiated ₹20k savings on RO systems (₹1L spend)",
+    ],
+    tags: ["Operations", "Procurement", "Cost Saving"],
+  },
+];
+
+// Education — minimal timeline
+const education = [
+  { school: "BITSoM", degree: "MBA (Pursuing)", note: "Ops & GenMan Club (12/158)", when: "2024–2026" },
+  { school: "Sri Chaitanya Degree College, Hyderabad", degree: "B.A (HPG)", note: "CGPA 9.14/10", when: "2016–2019" },
+];
+
+// Project gallery — visual badges
+const projects = [
+  {
+    client: "EPIL (Govt. Infra)",
+    outcomes: ["₹1,350Cr+ bid pipeline", "+10% qualified base"],
+    tags: ["GTM", "Public Sector", "Pipeline"],
+  },
+  {
+    client: "Dr. Reddy’s Laboratories",
+    outcomes: ["+15% market reach", "Rural 20% portfolio refresh"],
+    tags: ["Pharma", "RTM", "SKU"],
+  },
+  {
+    client: "Star Health (Intern)",
+    outcomes: ["HR newsletter (200+)", "Attrition framework −25% target"],
+    tags: ["People Ops", "Digital", "Strategy"],
+  },
+];
+
+const skills = [
+  { name: "Business Analytics", level: 0.9 },
+  { name: "Process Optimization", level: 0.85 },
+  { name: "GTM & Strategy", level: 0.8 },
+  { name: "Stakeholder Mgmt", level: 0.85 },
+  { name: "Automation", level: 0.75 },
+];
+
+const awards = [
+  { label: "NCC Certificate 'A'", icon: <Award className="h-3.5 w-3.5" /> },
+  { label: "Hyderabad Inter‑club Cricket", icon: <Trophy className="h-3.5 w-3.5" /> },
+];
+
+// ---------------- UI ATOMS ----------------
+const Tag = ({ children }: { children: React.ReactNode }) => (
+  <Badge variant="secondary" className="rounded-full px-3 py-1 text-xs">{children}</Badge>
+);
+
+const KPI = ({ label, value, icon }: any) => (
+  <Card className="shadow-sm hover:shadow-md transition-shadow">
+    <CardContent className="p-4 flex items-center gap-3">
+      <div className="h-9 w-9 rounded-xl grid place-items-center bg-zinc-100 dark:bg-zinc-900">{icon}</div>
+      <div>
+        <div className="text-lg font-semibold leading-tight">{value}</div>
+        <div className="text-xs text-zinc-500">{label}</div>
+      </div>
+    </CardContent>
+  </Card>
+);
+
+const SkillBar = ({ name, level }: { name: string; level: number }) => (
+  <div>
+    <div className="flex justify-between text-sm mb-1">
+      <span>{name}</span>
+      <span className="text-zinc-500">{Math.round(level * 100)}%</span>
+    </div>
+    <div className="h-2 rounded-full bg-zinc-200 dark:bg-zinc-800">
+      <div className="h-2 rounded-full bg-zinc-900 dark:bg-zinc-100" style={{ width: `${level * 100}%` }} />
+    </div>
+  </div>
+);
+
+const Collapse = ({ open, onToggle, children, label }: any) => (
+  <div className="mt-3">
+    <Button variant="ghost" size="sm" onClick={onToggle} className="px-2">
+      {open ? <ChevronUp className="h-4 w-4 mr-1"/> : <ChevronDown className="h-4 w-4 mr-1"/>}
+      {open ? "Hide details" : `Show details`}
+    </Button>
+    {open && <div className="mt-2 text-sm">{children}</div>}
+  </div>
+);
+
+// ---------------- MAIN ----------------
+function useDarkMode() {
+  const [dark, setDark] = React.useState(false);
+  React.useEffect(() => {
+    const root = document.documentElement;
+    if (dark) root.classList.add("dark"); else root.classList.remove("dark");
+  }, [dark]);
+  return { dark, setDark };
+}
+
+export default function Portfolio() {
+  const { dark, setDark } = useDarkMode();
+  const [query, setQuery] = useState("");
+  const [openIdx, setOpenIdx] = useState<number | null>(null);
+
+  const filteredTimeline = useMemo(() => {
+    if (!query) return timeline;
+    const q = query.toLowerCase();
+    return timeline.filter(t => [t.company, t.role, t.highlight, ...(t.bullets||[]), ...(t.tags||[])].join(" ").toLowerCase().includes(q));
+  }, [query]);
+
+  return (
+    <TooltipProvider>
+      <div className="min-h-screen bg-white text-zinc-900 dark:bg-zinc-950 dark:text-zinc-100 transition-colors">
+        {/* NAV */}
+        <header className="sticky top-0 z-40 backdrop-blur supports-[backdrop-filter]:bg-white/60 dark:supports-[backdrop-filter]:bg-zinc-950/60 border-b border-zinc-200 dark:border-zinc-800">
+          <div className="mx-auto max-w-6xl px-4 py-3 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 rounded-2xl bg-gradient-to-br from-zinc-900 to-zinc-600 dark:from-zinc-200 dark:to-zinc-400 grid place-items-center font-semibold text-white dark:text-zinc-900">AK</div>
+              <div>
+                <div className="font-semibold">{profile.name}</div>
+                <div className="text-xs text-zinc-500 dark:text-zinc-400">{profile.title}</div>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <Input value={query} onChange={(e)=>setQuery(e.target.value)} placeholder="Search roles, skills, projects…" className="w-56 hidden md:block" />
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button variant="ghost" size="icon" aria-label="Toggle dark mode" onClick={()=>setDark(!dark)}>
+                    {dark ? <Sun className="h-4 w-4"/> : <Moon className="h-4 w-4"/>}
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Toggle theme</TooltipContent>
+              </Tooltip>
+              <Button asChild>
+                <a href={profile.resumeHref} download>
+                  <Download className="h-4 w-4 mr-2"/> Download CV
+                </a>
+              </Button>
+            </div>
+          </div>
+        </header>
+
+        {/* HERO: visual, minimal copy */}
+        <section className="relative">
+          <div className="absolute inset-0 -z-10 bg-[radial-gradient(ellipse_at_top_right,rgba(0,0,0,0.06),transparent_40%),radial-gradient(ellipse_at_bottom_left,rgba(0,0,0,0.06),transparent_40%)] dark:bg-[radial-gradient(ellipse_at_top_right,rgba(255,255,255,0.08),transparent_40%),radial-gradient(ellipse_at_bottom_left,rgba(255,255,255,0.08),transparent_40%)]"/>
+          <div className="mx-auto max-w-6xl px-4 py-10 md:py-14">
+            <div className="grid gap-6 md:grid-cols-5 items-center">
+              <motion.div initial={{opacity:0,y:12}} animate={{opacity:1,y:0}} transition={{duration:0.5}} className="md:col-span-3">
+                <h1 className="text-3xl md:text-4xl font-semibold tracking-tight">Hi, I’m {profile.name}</h1>
+                <p className="mt-2 text-zinc-600 dark:text-zinc-300 max-w-2xl">{profile.blurb}</p>
+                <div className="mt-4 flex flex-wrap gap-2 text-sm text-zinc-600 dark:text-zinc-300">
+                  <span className="inline-flex items-center gap-2"><MapPin className="h-4 w-4"/>{profile.location}</span>
+                  <a className="inline-flex items-center gap-2 underline-offset-2 hover:underline" href={`mailto:${profile.email}`}><Mail className="h-4 w-4"/>{profile.email}</a>
+                  <span className="inline-flex items-center gap-2"><Phone className="h-4 w-4"/>{profile.phone}</span>
+                </div>
+                <div className="mt-4 flex gap-2">
+                  {profile.links.map((l)=> (
+                    <Button key={l.label} asChild variant="outline" size="sm">
+                      <a href={l.href} target="_blank" rel="noreferrer" className="flex items-center gap-2">{l.icon}{l.label}</a>
+                    </Button>
+                  ))}
+                </div>
+              </motion.div>
+              <motion.div initial={{opacity:0,y:12}} animate={{opacity:1,y:0}} transition={{duration:0.5, delay:0.05}} className="md:col-span-2">
+                <div className="grid grid-cols-2 gap-3">
+                  {kpis.map((k, i)=> <KPI key={i} {...k} />)}
+                </div>
+              </motion.div>
+            </div>
+          </div>
+        </section>
+
+        {/* CONTENT */}
+        <main className="mx-auto max-w-6xl px-4 pb-10">
+          <Tabs defaultValue="experience" className="w-full">
+            <TabsList className="grid w-full grid-cols-4">
+              <TabsTrigger value="experience">Experience</TabsTrigger>
+              <TabsTrigger value="projects">Projects</TabsTrigger>
+              <TabsTrigger value="education">Education</TabsTrigger>
+              <TabsTrigger value="skills">Skills</TabsTrigger>
+            </TabsList>
+
+            {/* EXPERIENCE — TIMELINE */}
+            <TabsContent value="experience" className="mt-6">
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-xl flex items-center gap-2"><Briefcase className="h-5 w-5"/>Career Timeline</CardTitle>
+                  <CardDescription>Skim highlights. Expand for details.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="relative pl-6">
+                    <div className="absolute left-3 top-0 bottom-0 w-px bg-zinc-200 dark:bg-zinc-800"/>
+                    <div className="space-y-6">
+                      {filteredTimeline.map((t, idx)=> {
+                        const open = openIdx === idx;
+                        return (
+                          <div key={idx} className="relative">
+                            <div className="absolute -left-1.5 mt-2 h-3 w-3 rounded-full bg-zinc-900 dark:bg-zinc-100"/>
+                            <div className="rounded-xl border border-zinc-200 dark:border-zinc-800 p-4 hover:shadow-sm transition-shadow">
+                              <div className="flex flex-wrap items-center justify-between gap-2">
+                                <div className="font-medium">{t.role} — {t.company}</div>
+                                <div className="text-xs text-zinc-500">{t.when}</div>
+                              </div>
+                              <div className="mt-1 text-sm text-zinc-700 dark:text-zinc-300">
+                                {t.highlight}
+                              </div>
+                              <div className="mt-2 flex flex-wrap gap-2">{t.tags.map((x:string)=> <Tag key={x}>{x}</Tag>)}</div>
+                              <Collapse open={open} onToggle={()=> setOpenIdx(open ? null : idx)}>
+                                <ul className="list-disc pl-5 space-y-1">
+                                  {t.bullets.map((b:string, i:number)=> <li key={i}>{b}</li>)}
+                                </ul>
+                              </Collapse>
+                            </div>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            {/* PROJECTS — VISUAL CARDS */}
+            <TabsContent value="projects" className="mt-6">
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-xl flex items-center gap-2"><Building2 className="h-5 w-5"/>Highlighted Projects</CardTitle>
+                  <CardDescription>Outcomes at a glance.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid md:grid-cols-3 gap-4">
+                    {projects.map((p, i)=> (
+                      <Card key={i} className="group border-zinc-200 dark:border-zinc-800 overflow-hidden">
+                        <CardHeader className="pb-2">
+                          <CardTitle className="text-base flex items-center gap-2">
+                            <Sparkles className="h-4 w-4"/>{p.client}
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="flex flex-wrap gap-2">
+                            {p.outcomes.map((o, j)=> (
+                              <Badge key={j} className="rounded-full text-xs py-1">{o}</Badge>
+                            ))}
+                          </div>
+                          <Separator className="my-3"/>
+                          <div className="flex flex-wrap gap-2">{p.tags.map((t,j)=> <Tag key={j}>{t}</Tag>)}</div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            {/* EDUCATION — COMPACT TIMELINE */}
+            <TabsContent value="education" className="mt-6">
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-xl flex items-center gap-2"><GraduationCap className="h-5 w-5"/>Education</CardTitle>
+                  <CardDescription>Credentials & highlights.</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {education.map((e, i)=> (
+                    <div key={i} className="grid md:grid-cols-3 gap-2 border border-zinc-200 dark:border-zinc-800 rounded-xl p-4">
+                      <div className="font-medium">{e.school}</div>
+                      <div className="text-sm">{e.degree} {e.note? `• ${e.note}`: ""}</div>
+                      <div className="text-xs text-zinc-500 md:text-right">{e.when}</div>
+                    </div>
+                  ))}
+                  <div className="flex flex-wrap gap-2 pt-2">
+                    {awards.map((a,i)=> (
+                      <Badge key={i} variant="secondary" className="rounded-full text-xs py-1 inline-flex items-center gap-2">{a.icon}{a.label}</Badge>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            {/* SKILLS — BARS */}
+            <TabsContent value="skills" className="mt-6">
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-xl flex items-center gap-2"><BarChart className="h-5 w-5"/>Skills Snapshot</CardTitle>
+                  <CardDescription>Strengths by proficiency.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid md:grid-cols-2 gap-4">
+                    {skills.map((s, i)=> <SkillBar key={i} {...s} />)}
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+          </Tabs>
+
+          {/* CTA */}
+          <motion.div initial={{opacity:0,y:6}} animate={{opacity:1,y:0}} transition={{duration:0.45, delay:0.1}} className="mt-6">
+            <Card className="bg-gradient-to-br from-zinc-50 to-white dark:from-zinc-900 dark:to-zinc-950 border-zinc-200 dark:border-zinc-800">
+              <CardContent className="py-6 md:py-8 flex flex-col md:flex-row items-center justify-between gap-4">
+                <div>
+                  <div className="text-lg font-semibold">Let’s collaborate</div>
+                  <p className="text-sm text-zinc-600 dark:text-zinc-300">Open to consulting projects and internships in Strategy, Analytics, and Operations.</p>
+                </div>
+                <div className="flex gap-2">
+                  <Button asChild>
+                    <a href={`mailto:${profile.email}`}><Mail className="h-4 w-4 mr-2"/>Email</a>
+                  </Button>
+                  <Button variant="outline" asChild>
+                    <a href={profile.resumeHref} download><Download className="h-4 w-4 mr-2"/>Resume</a>
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
+        </main>
+
+        <footer className="py-10 text-center text-xs text-zinc-500">© {new Date().getFullYear()} {profile.name}. Built with React, Tailwind, and shadcn/ui.</footer>
+      </div>
+    </TooltipProvider>
+  );
+}
